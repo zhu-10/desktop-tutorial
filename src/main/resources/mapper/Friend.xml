@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.FriendMapper">
+
+    <!-- 好友申请列表：我收到的申请 -->
+    <select id="selectFriendList" resultType="org.example.vo.FriendVo">
+        SELECT
+        f.id,
+        f.myself      AS userId,
+        f.content,
+        f.is_read     AS isRead,
+        f.update_time AS updateTime,
+        u.username    AS friendName
+        FROM friend f
+        LEFT JOIN `user` u ON f.myself = u.id
+        WHERE f.friend = #{myself}
+        <if test="isRead != null">
+            AND f.is_read = #{isRead}
+        </if>
+        ORDER BY f.update_time DESC
+    </select>
+
+    <!-- 已经是好友数量 -->
+    <select id="countRealFriend" resultType="int">
+        SELECT COUNT(*) FROM friend
+        WHERE myself = #{myself}
+        AND friend = #{friend}
+        AND status = 1
+    </select>
+
+    <!-- 待处理申请数量 -->
+    <select id="countPending" resultType="int">
+        SELECT COUNT(*) FROM friend
+        WHERE myself = #{myself}
+        AND friend = #{friend}
+        AND status = 0
+    </select>
+
+    <!-- 已拒绝数量（id 改成 countRefused，别和 countPending 撞名） -->
+    <select id="countRefused" resultType="int">
+        SELECT COUNT(*) FROM friend
+        WHERE myself = #{myself}
+        AND friend = #{friend}
+        AND status = 2
+    </select>
+
+    <!-- 好友列表 -->
+    <select id="listFriends" resultType="org.example.vo.FriendVo">
+        SELECT
+        f.id,
+        f.friend      AS userId,
+        f.is_read     AS isRead,
+        f.update_time AS updateTime,
+        u.username    AS friendName
+        FROM friend f
+        LEFT JOIN `user` u ON f.friend = u.id
+        WHERE f.myself = #{myself}
+        AND f.status = 1
+        ORDER BY f.update_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <!-- 聊天记录（必须带 friendId） -->
+    <select id="listMessages" resultType="org.example.vo.FriendVo">
+        SELECT
+        m.id,
+        <!-- 判断对方是谁：如果自己是myself，对方就是friend，反之亦然 -->
+        IF(m.myself = #{myId}, m.friend, m.myself) AS userId,
+        <!-- 关联用户表获取好友名字 -->
+        u.username    AS friendName,
+        m.content,
+        m.is_read     AS isRead,
+        <!-- 映射到 FriendVo 中的 updateTime -->
+        m.create_time AS updateTime
+        FROM Friend m
+        <!-- 关联用户表，条件为对方ID等于用户表主键 -->
+        LEFT JOIN `user` u ON u.id = IF(m.myself = #{myId}, m.friend, m.myself)
+        WHERE (m.myself = #{myId}     AND m.friend = #{friendId})
+        OR (m.myself = #{friendId} AND m.friend = #{myId})
+        ORDER BY m.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 发送消息 -->
+    <insert id="insertMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO Friend (
+        myself,
+        friend,
+        content,
+        is_read,
+        create_time,
+        update_time
+        ) VALUES (
+        #{myself},
+        #{friend},
+        #{content},
+        #{isRead},
+        #{createTime},
+        #{updateTime}
+        )
+    </insert>
+
+
+
+    <!-- 同意申请 -->
+    <update id="acceptFriendRequest">
+        UPDATE friend
+        SET status = 1,
+        is_read = 1,
+        update_time = #{updateTime}
+        WHERE id = #{id}
+        AND status = 0
+    </update>
+
+</mapper>
