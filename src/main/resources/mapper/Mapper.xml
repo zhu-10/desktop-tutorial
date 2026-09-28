@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.PrivateMapper">
+
+    <!-- 分页查询：我参与的所有私信，带发送者用户名 -->
+    <select id="getConversations" resultType="org.example.vo.PrivateVo">
+        SELECT
+        t.other_user_id   AS id,
+        u.username        AS receiverName,  -- 对方用户名（会话标题）
+        s.username        AS senderName,    -- 最后一条消息的实际发送者
+        p.sender          AS senderId,      -- 建议加上：最后一条消息发送者的ID（前端判断用）
+        p.content         AS content,
+        p.is_read         AS isRead,
+        p.create_time     AS createTime
+        FROM (
+        SELECT
+        CASE
+        WHEN sender = #{userId} THEN receiver
+        ELSE sender
+        END AS other_user_id,
+        MAX(id) AS last_id
+        FROM private
+        WHERE sender = #{userId} OR receiver = #{userId}
+        GROUP BY other_user_id
+        HAVING other_user_id &lt;&gt; #{userId}   <!-- 排除自己 -->
+        ) t
+        JOIN private p ON p.id = t.last_id
+        LEFT JOIN user u ON u.id = t.other_user_id  -- 对方
+        LEFT JOIN user s ON s.id = p.sender          -- ★ 最后一条消息的发送者
+        ORDER BY p.create_time DESC
+        <!-- ⭐ IPage 模式不要写 LIMIT -->
+    </select>
+    <!-- 标记已读 -->
+    <update id="markAsRead">
+        UPDATE private
+        SET is_read = 1
+        WHERE sender = #{senderId}
+        AND receiver = #{currentUserId}
+    </update>
+    <!-- 获取用户私信数据 -->
+    <select id="selectPrivateVoPage" resultType="org.example.vo.PrivateVo">
+        SELECT * FROM (
+        SELECT p.id, p.content,
+        p.sender AS senderId, p.receiver AS receiverId,
+        p.create_time AS createTime,
+        s.username AS senderName, r.username AS receiverName
+        FROM `private` p
+        LEFT JOIN `user` s ON p.sender = s.id
+        LEFT JOIN `user` r ON p.receiver = r.id
+        WHERE p.sender = #{currentUserId}
+        <if test="receiver != null">
+            AND p.receiver = #{receiver}
+        </if>
+        <if test="isRead != null">
+            AND p.is_read = #{isRead}
+        </if>
+
+        UNION ALL
+
+        SELECT p.id, p.content,
+        p.sender AS senderId, p.receiver AS receiverId,
+        p.create_time AS createTime,
+        s.username AS senderName, r.username AS receiverName
+        FROM `private` p
+        LEFT JOIN `user` s ON p.sender = s.id
+        LEFT JOIN `user` r ON p.receiver = r.id
+        WHERE p.receiver = #{currentUserId}
+        <if test="sender != null">
+            AND p.sender = #{sender}
+        </if>
+        <if test="isRead != null">
+            AND p.is_read = #{isRead}
+        </if>
+        ) t
+        ORDER BY t.createTime ASC
+    </select>
+</mapper>
