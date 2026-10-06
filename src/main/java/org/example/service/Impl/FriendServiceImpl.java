@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;   // 🟢 只 import 这个
 @Service
 public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> implements FriendService {
     @Autowired
-    private FriendMapper friendmapper;
+    private FriendMapper friendMapper;
     @Autowired
     private UserMapper userMapper;
 
@@ -43,12 +43,12 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         if (target == null) throw new BizException("用户不存在");
 
         // 3. 是否已经是好友（单向检查即可，正常情况双向同时存在）
-        if (friendmapper.countRealFriend(currentUserId, userId) > 0) {
+        if (friendMapper.countRealFriend(currentUserId, userId) > 0) {
             throw new BizException("你们已经是好友了");
         }
 
         // 是否存在待处理申请
-        if (friendmapper.countPending(currentUserId, userId) > 0) {
+        if (friendMapper.countPending(currentUserId, userId) > 0) {
             throw new BizException("已发送申请，等待对方同意");
         }
 
@@ -63,7 +63,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         apply.setStatus(0);               // 待处理
         apply.setCreateTime(now);
         apply.setUpdateTime(now);
-        friendmapper.insert(apply);
+        friendMapper.insert(apply);
     }
 
 
@@ -71,7 +71,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     @Override
     public List<FriendVo> listFriends(Long currentUserId) {
         if (currentUserId == null) throw new BizException("请先登录");
-        return friendmapper.selectFriendList(currentUserId, false);
+        return friendMapper.selectFriendList(currentUserId, false);
 
 
     }
@@ -79,21 +79,21 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     @Override
     //删除好友
     @Transactional(rollbackFor = Exception.class)
-    public void deleteFriend(Long currentUserId, Long friendId) {
+    public void deleteFriend(Long currentUserId, Long userId) {
         if (currentUserId == null) throw new BizException("请先登录");
         // 双向删除
-        friendmapper.delete(new LambdaQueryWrapper<Friend>()
+        friendMapper.delete(new LambdaQueryWrapper<Friend>()
                 .eq(Friend::getMyself, currentUserId)
-                .eq(Friend::getFriend, friendId));
-        friendmapper.delete(new LambdaQueryWrapper<Friend>()
-                .eq(Friend::getMyself, friendId)
+                .eq(Friend::getFriend, userId));
+        friendMapper.delete(new LambdaQueryWrapper<Friend>()
+                .eq(Friend::getMyself, userId)
                 .eq(Friend::getFriend, currentUserId));
     }
 
     @Override
     //更新好友消息
     public void updateLastMessage(Long myself, Long friend, String content, Boolean isRead) {
-        friendmapper.updateLastMessage(myself, friend, content, isRead);
+        friendMapper.updateLastMessage(myself, friend, content, isRead);
     }
 
     //好友申请列表
@@ -103,7 +103,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         log.info("当前登录用户ID: {}", currentUserId);
         // 🟢 直接调用 Mapper 里的自定义联表 SQL
         // 如果你只查未处理的申请，传 false；如果查全部，传 null
-        List<FriendVo> list = friendmapper.selectFriendList(currentUserId, false);
+        List<FriendVo> list = friendMapper.selectFriendList(currentUserId, false);
         log.info("查询结果条数 = {}", list.size());   // 🟢 关键
         return list;
     }
@@ -119,7 +119,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
          if (requestId == null)       throw new BizException("申请ID不能为空");
 
          // 1. 查申请记录，校验权限和状态
-         Friend apply = friendmapper.selectById(requestId);
+         Friend apply = friendMapper.selectById(requestId);
          if (apply == null) throw new BizException("申请不存在");
          if (!currentUserId.equals(apply.getFriend()))
              throw new BizException("无权处理该申请");
@@ -130,7 +130,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
          LocalDateTime now = LocalDateTime.now();
 
          // 2. 把 A→B 这条改为"已同意、已读"
-         friendmapper.acceptFriendRequest(requestId,now);
+         friendMapper.acceptFriendRequest(requestId,now);
          // SQL: UPDATE friend SET status=1, is_read=1, update_time=#{updateTime} WHERE id=#{id}
 
          // 3. 反向插一条 B→A，表示好友关系建立
@@ -142,7 +142,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
          back.setStatus(1);               // 已同意
          back.setCreateTime(now);
          back.setUpdateTime(now);
-         friendmapper.insert(back);
+         friendMapper.insert(back);
     }
 
     //删除/拒绝好友申请
@@ -151,7 +151,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     public void deleteFriendRequest(Long requestId, Long currentUserId) {
         // 1. 查询申请记录
         // 1. 查申请
-        Friend apply = friendmapper.selectById(requestId);
+        Friend apply = friendMapper.selectById(requestId);
         if (apply == null) throw new BizException("申请不存在");
 
         // 🟢 2. 校验权限：只能处理发给自己的申请！
@@ -164,30 +164,30 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
             throw new BizException("该申请已处理");
         }
         //物理删除（直接删记录）
-        friendmapper.deleteById(requestId);
+        friendMapper.deleteById(requestId);
     }
 
     //获取消息
     @Override
-    public List<FriendVo> getMessages(Long myId, Long friendId, Integer page, Integer pageSize) {
-        if (myId == null || friendId == null) throw new BizException("参数缺失");
+    public List<FriendVo> getMessages(Long myId, Long userId, Integer page, Integer pageSize) {
+        if (myId == null || userId == null) throw new BizException("参数缺失");
         int p = (page == null || page < 1) ? 1 : page;
         int size = (pageSize == null || pageSize < 1) ? 20 : pageSize;
         int offset = (p - 1) * size;
 
-        return friendmapper.listMessages(myId, friendId, offset, size);
+        return friendMapper.listMessages(myId, userId, offset, size);
     }
 
     //标记已读
     @Override
-    public void markRead(Long myId, Long friendId) {
-        if (myId == null || friendId == null) {
+    public void markRead(Long myId, Long userId) {
+        if (myId == null || userId == null) {
             throw new BizException("参数缺失");
         }
 
         LambdaUpdateWrapper<Friend> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Friend::getMyself, myId)          // 我
-                .eq(Friend::getFriend, friendId)      // 对方
+                .eq(Friend::getFriend, userId)      // 对方
                 .set(Friend::getIsRead, true);        // 已读 = 1
         // ⚠️ 不要 set updateTime，否则会话列表排序会乱
 
@@ -218,7 +218,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         friend.setUpdateTime(now); // 最新消息时间（也可以与创建时间一致）
 
         // 3. 调用 Mapper 插入数据库
-        return friendmapper.insertMessage(friend);
+        return friendMapper.insertMessage(friend);
     }
 
 }

@@ -34,10 +34,10 @@ public interface FriendService extends IService<Friend> {
     void deleteFriendRequest(Long requestId, Long currentUserId);
 
     /** 获取某人的聊天记录（分页） */
-    List<FriendVo> getMessages(Long myId, Long friendId, Integer page, Integer pageSize);
+    List<FriendVo> getMessages(Long myId, Long userId, Integer page, Integer pageSize);
 
     /** 标记和某人的消息已读 */
-    void markRead(Long myId, Long friendId);
+    void markRead(Long myId, Long userId);
 
     //发送消息
     int insertMessage(Friend friend);

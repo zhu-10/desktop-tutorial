@@ -1,15 +1,11 @@
 package org.example.controller;
 
-import org.example.dto.UserInfoDTO;
-import org.example.dto.UserLoginDTO;
-import org.example.dto.UserRegisterDTO;
+import org.example.dto.*;
 import org.example.entity.User;
 import org.example.mapper.UserMapper;
 import org.example.service.UserService;
 import org.example.utils.JwtUtil;
 import org.example.utils.Result;
-import org.example.dto.ChangePasswordDTO;
-import org.example.dto.ChangeUsernameDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -102,25 +98,36 @@ public class UserController {
 
     // 修改用户信息
     @PutMapping("/user")
-    public Result changeUsername(
-            @RequestBody ChangeUsernameDTO dto,
+    public Result updateUserInfo(
+            @RequestBody userDTO dto,
             HttpServletRequest request) {
+
+        // 获取当前登录用户的 ID (这里延用你原有的 getCurrentUserId)
         Long userId = getCurrentUserId(request);
-        userService.changeUsername(userId, dto.getNewUsername());
-        return Result.success("用户名修改成功");
+
+        // 调用业务层更新方法
+        userService.updateUser(userId, dto);
+
+        return Result.success("用户信息修改成功");
+    }
+    // 辅助方法
+    // ==========================================
+    private Long getCurrentUserId(HttpServletRequest request) {
+        String userIdStr = jwtUtil.getUserIdFromRequest(request);
+        if (userIdStr == null) {
+            // 优化：不要返回 null，直接抛出异常，防止后续空指针
+            throw new RuntimeException("未登录或Token无效");
+        }
+        return Long.parseLong(userIdStr);
     }
 
     // 获取当前用户信息
     @GetMapping("/info")
-    public Result<User> getInfo(HttpServletRequest request) {
-        User user = userService.getCurrentUser(request);
-        return Result.success(user);
+    public Result<User> getCurrentUser(HttpServletRequest request) {
+        // ⚠️ 重点：这里绝对不需要 @RequestBody，也不需要 userDTO 参数
+        User currentUser = userService.getCurrentUser(request);
+        // 直接返回查询到的用户信息
+        return Result.success(currentUser);
     }
 
-    // 辅助方法
-    private Long getCurrentUserId(HttpServletRequest request) {
-        String userIdStr = jwtUtil.getUserIdFromRequest(request);
-        if (userIdStr == null) return null;
-        return Long.parseLong(userIdStr);
-    }
 }
