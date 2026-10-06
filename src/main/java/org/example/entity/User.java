@@ -14,8 +14,11 @@ public class User {
         private Long id;
         private String username;
         private String password; // 存加密后的密文，绝不存明文！
-        private String phone;
+        private String phone;   //电话
+        private String remark;  //备注
+        private String email;   //邮箱
         private String hobby;   //爱好
+        private String signature;   //简介
         private String gender;  //性别
         private String birthday;    //生日
 }

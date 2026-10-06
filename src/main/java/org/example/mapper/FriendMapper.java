@@ -55,7 +55,9 @@ public interface FriendMapper extends BaseMapper<Friend>{
                      @Param("friend") Long friend);
 
     /** 🟢 好友列表：我这边 status=1 的记录 */
-    List<FriendVo> listFriends(@Param("myself") Long myself,@Param("offset")   Integer offset,
+    List<FriendVo> listFriends(@Param("myself") Long myself,
+                               @Param("offset") Integer offset,
+
                                @Param("pageSize") Integer pageSize);
 
     int countRefused(@Param("myself") Long myself,   // 🟢 名字对齐
@@ -64,7 +66,7 @@ public interface FriendMapper extends BaseMapper<Friend>{
     /** 获取我和某人的聊天记录 */
     List<FriendVo> listMessages(
             @Param("myId") Long myId,
-            @Param("friendId") Long friendId,
+            @Param("userId") Long userId,
             @Param("offset") Integer offset,
             @Param("pageSize") Integer pageSize
     );
