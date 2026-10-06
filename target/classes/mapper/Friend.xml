@@ -60,10 +60,11 @@
         ORDER BY f.update_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>
-    <!-- 聊天记录（必须带 friendId） -->
+    <!-- 聊天记录（必须带 userId） -->
     <select id="listMessages" resultType="org.example.vo.FriendVo">
         SELECT
         m.id,
+        m.myself      AS senderId,
         <!-- 判断对方是谁：如果自己是myself，对方就是friend，反之亦然 -->
         IF(m.myself = #{myId}, m.friend, m.myself) AS userId,
         <!-- 关联用户表获取好友名字 -->
@@ -75,8 +76,8 @@
         FROM Friend m
         <!-- 关联用户表，条件为对方ID等于用户表主键 -->
         LEFT JOIN `user` u ON u.id = IF(m.myself = #{myId}, m.friend, m.myself)
-        WHERE (m.myself = #{myId}     AND m.friend = #{friendId})
-        OR (m.myself = #{friendId} AND m.friend = #{myId})
+        WHERE (m.myself = #{myId}     AND m.friend = #{userId})
+        OR (m.myself = #{userId} AND m.friend = #{myId})
         ORDER BY m.create_time DESC
         LIMIT #{offset}, #{pageSize}
     </select>

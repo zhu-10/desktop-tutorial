@@ -2,6 +2,7 @@ package org.example.controller;
 
 import org.example.entity.Daily;
 import org.example.entity.User;
+import org.example.mapper.DailyMapper;
 import org.example.mapper.UserMapper;
 import org.example.service.DailyService;
 import org.example.utils.JwtUtil;
@@ -28,6 +29,9 @@ public class DailyController {
 
     @Autowired
     private UserMapper userMapper;// 新增
+
+    @Autowired
+    private DailyMapper dailyMapper;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -95,8 +99,9 @@ public class DailyController {
             return Result.error("无权删除别人的动态");
         }
 
-        boolean removed = dailyService.removeById(id);
-        return removed ? Result.success("删除成功") : Result.error("删除失败");
+        // 🔥 修改这里：调用 Mapper 的自定义物理删除方法
+        int rows = dailyMapper.physicalDeleteById(id);
+        return rows > 0 ? Result.success("删除成功") : Result.error("删除失败");
     }
 
     // ========== 修改 ==========

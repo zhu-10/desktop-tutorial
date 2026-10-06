@@ -40,14 +40,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Override
     public List<Comment> listByUsername(String username) {
 
-        // 先根据用户名查用户
-        LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
-        userWrapper.eq(User::getUsername, username);
+        // 1. 先根据用户名查用户（⚠️改成 getByUsername）
+        // 如果你 UserService 里没有这个方法，需要去 UserService 里加上：
+        // public User getByUsername(String username) { return userMapper.selectByUsername(username); }
         User user = userService.getByUsername(username);
+
         if (user == null) {
             return Collections.emptyList();
         }
-        // 再根据 userId 查评论
+
+        // 2. 再根据 userId 查评论
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Comment::getUserId, user.getId())
                 .orderByDesc(Comment::getCreateTime);

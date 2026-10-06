@@ -12,6 +12,7 @@ import org.example.utils.SecurityUtils;
 import org.example.vo.FriendVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -52,9 +53,9 @@ public class FriendController {
     // 删除好友
     @DeleteMapping("/remove/{requestId}")
     //注意，使用@PathVariable("requestId")需要在vo加上id，让前端获取id
-    public Result<Void> delete(@PathVariable("requestId") Long friendId) {
+    public Result<Void> delete(@PathVariable("requestId") Long userId) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
-        friendService.deleteFriend(currentUserId, friendId);
+        friendService.deleteFriend(currentUserId, userId);
         return Result.success();
     }
 
@@ -104,9 +105,9 @@ public class FriendController {
         return Result.success(result);
     }
     //获取消息
-    @PostMapping("/getmessages")
+    @GetMapping("/getmessages")
     public Result<List<FriendVo>> getMessages(
-            @RequestParam Long friendId,
+            @RequestParam Long userId,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
 
@@ -114,11 +115,11 @@ public class FriendController {
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
         // 2. 参数校验
-        if (friendId == null) {
+        if (userId == null) {
             throw new BizException("好友ID不能为空");
         }
         // 3. 调用 Service 层获取消息（注意：分页计算 offset 的逻辑在 Service 层处理）
-        List<FriendVo> messages = friendService.getMessages(currentUserId, friendId, page, pageSize);
+        List<FriendVo> messages = friendService.getMessages(currentUserId, userId, page, pageSize);
 
         // 4. 返回统一结果
         return Result.success(messages);
@@ -126,10 +127,20 @@ public class FriendController {
 
     //标记已读
     @PostMapping("/isread")
-    public void markRead(
-            @RequestParam Long friendId,
-            @RequestParam(required = false) Long currentUserId
-    ) {
-        friendService.markRead(currentUserId, friendId);
+    public Result<Void> markRead(@RequestBody Map<String, Long> payload) {
+        // 1. 从 Token 获取当前登录用户（安全！）
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        // 2. 从 JSON 中提取前端传来的 friend_id
+        Long userId = payload.get("userId");
+
+        if (userId == null) {
+            throw new BizException("好友ID不能为空");
+        }
+
+        // 3. 调用 Service
+        friendService.markRead(currentUserId, userId);
+
+        return Result.success();
     }
 }
