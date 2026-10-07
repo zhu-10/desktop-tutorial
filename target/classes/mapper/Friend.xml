@@ -64,7 +64,6 @@
     <select id="listMessages" resultType="org.example.vo.FriendVo">
         SELECT
         m.id,
-        m.myself      AS senderId,
         <!-- 判断对方是谁：如果自己是myself，对方就是friend，反之亦然 -->
         IF(m.myself = #{myId}, m.friend, m.myself) AS userId,
         <!-- 关联用户表获取好友名字 -->
