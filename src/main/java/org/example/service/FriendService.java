@@ -1,16 +1,12 @@
 package org.example.service;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.ibatis.annotations.Param;
 import org.example.entity.Friend;
 import org.example.vo.FriendVo;
-import org.example.vo.PrivateVo;
 
 import java.util.List;
 
-
+//接口
 public interface FriendService extends IService<Friend> {
     /** 添加好友（双向建立关系） */
     void addFriend(Long currentUserId, Long userId);
