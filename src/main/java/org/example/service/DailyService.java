@@ -2,6 +2,7 @@ package org.example.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.entity.Daily;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,5 +25,7 @@ public interface DailyService extends IService<Daily> {
     //searchDaily：查当前页数据；countSearchDaily：查总条数。
     Long countSearchDaily(String keyword, Integer isPublic, Long userId, Long currentUserId);
 
+    //配置上传图片方法
+    String uploadDailyImage(MultipartFile file, Long currentUserId);
 }
 

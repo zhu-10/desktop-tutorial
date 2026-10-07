@@ -131,9 +131,8 @@ public class FriendController {
         // 1. 从 Token 获取当前登录用户（安全！）
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // 2. 从 JSON 中提取前端传来的 friend_id
+        // 2. 从 JSON 中提取前端传来的 userId
         Long userId = payload.get("userId");
-
         if (userId == null) {
             throw new BizException("好友ID不能为空");
         }

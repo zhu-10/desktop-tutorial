@@ -4,15 +4,20 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.jsonwebtoken.io.IOException;
 import org.example.entity.Daily;
 import org.example.entity.User;
+import org.example.exception.BizException;
 import org.example.mapper.DailyMapper;
 import org.example.mapper.UserMapper;
 import org.example.service.DailyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class DailyServiceImpl extends ServiceImpl<DailyMapper, Daily> implements DailyService {
@@ -32,7 +37,7 @@ public class DailyServiceImpl extends ServiceImpl<DailyMapper, Daily> implements
     }
 
     // 保存 Daily 的方法
-    //检查用户
+    //检查用户，上传数据
     @Override
     public boolean saveDaily(Daily daily, Long currentUserId) {
         // 检查用户
@@ -44,6 +49,12 @@ public class DailyServiceImpl extends ServiceImpl<DailyMapper, Daily> implements
         daily.setUserId(currentUserId);
         //设置日报的作者用户名
         daily.setUsername(user.getUsername());
+        //设置是否有图片
+        if (daily.getImage() != null && !daily.getImage().isEmpty()) {
+            daily.setType(1);  // 有图
+        } else {
+            daily.setType(0);  // 纯文本
+        }
         //保存数据
         return save(daily);
     }
@@ -136,5 +147,60 @@ public class DailyServiceImpl extends ServiceImpl<DailyMapper, Daily> implements
         appendSearchCondition(wrapper, keyword);
         //统计数量
         return baseMapper.selectCount(wrapper);
+    }
+
+    @Override
+    public String uploadDailyImage(MultipartFile file, Long currentUserId) {
+        // 1. 校验用户
+        if (currentUserId == null) {
+            throw new BizException("未登录");
+        }
+        User user = UserMapper.selectById(currentUserId);
+        if (user == null) {
+            throw new BizException("用户不存在");
+        }
+
+        // 2. 校验文件非空
+        if (file == null || file.isEmpty()) {
+            throw new BizException("上传文件不能为空");
+        }
+
+        // 3. 校验类型
+        String originalName = file.getOriginalFilename();
+        String ext = "";
+        if (originalName != null && originalName.contains(".")) {
+            ext = originalName.substring(originalName.lastIndexOf(".")).toLowerCase();
+        }
+        if (!ext.matches("\\.(jpg|jpeg|png|gif|webp|bmp)")) {
+            throw new BizException("只允许上传图片文件");
+        }
+
+        // 4. 校验大小
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new BizException("图片大小不能超过 5MB");
+        }
+
+        // 5. 生成新文件名
+        String newFileName = UUID.randomUUID().toString().replace("-", "") + ext;
+
+        // 6. 保存目录
+        String baseDir = System.getProperty("user.dir") + "/uploads/images/";
+        File dir = new File(baseDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        File dest = new File(dir, newFileName);
+
+        // 7. 一层 try-catch 就够了
+        try {
+            file.transferTo(dest);
+        } catch (IOException e) {
+            throw new BizException("图片保存失败：" + e.getMessage(), e);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return "/uploads/images/" + newFileName;
     }
 }

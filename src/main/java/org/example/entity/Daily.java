@@ -16,7 +16,11 @@ public class Daily {
     private String username;//发布者名字
     private String theme;//主题
     private String content;//内容
-    private String  image;//图片
+    @TableField("image_url")
+    private String image;   //图片
+    /** 0-纯文本 1-图文 2-纯图片 */
+    @TableField("msg_type")
+    private Integer type;      // 对应 type
     private Integer isPublic;//是否公开
     @TableField(fill = FieldFill.INSERT)//插入自动填充
     private LocalDateTime createTime;//发布时间

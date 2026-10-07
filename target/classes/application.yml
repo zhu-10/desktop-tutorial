@@ -21,8 +21,13 @@ servlet:
     max-file-size: 5MB      # 单个文件最大 5MB
     max-request-size: 5MB   # 整个请求总大小（如果有多个文件）也是 5MB
 
+#导入数据库文件
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
+
+#图片导入地址
+file:
+  upload-dir=uploads/:
 
 mybatis:
   configuration:

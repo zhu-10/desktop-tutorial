@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .and()
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/api/login/", "/api/register/").permitAll()
+                .antMatchers("/api/login/", "/api/register/").permitAll()   //放行
+                .antMatchers("/uploads/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic().disable();
