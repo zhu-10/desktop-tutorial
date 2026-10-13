@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;   // 🟢 只 import 这个
 
 @Slf4j
 @Service
+//加油
 public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> implements FriendService {
     @Autowired
     private FriendMapper friendMapper;
@@ -149,6 +150,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     // 逻辑：校验权限后直接删除
     //11111
     //这是无数次提交
+
     @Override
     public void deleteFriendRequest(Long requestId, Long currentUserId) {
         // 1. 查询申请记录
