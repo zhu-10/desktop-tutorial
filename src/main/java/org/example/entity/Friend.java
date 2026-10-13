@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-
+//这是朋友功能
 //配置好友字段
 @Data
 @TableName("Friend")
