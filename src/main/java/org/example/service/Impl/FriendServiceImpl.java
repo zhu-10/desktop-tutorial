@@ -147,6 +147,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
 
     //删除/拒绝好友申请
     // 逻辑：校验权限后直接删除
+    //11111
     @Override
     public void deleteFriendRequest(Long requestId, Long currentUserId) {
         // 1. 查询申请记录
