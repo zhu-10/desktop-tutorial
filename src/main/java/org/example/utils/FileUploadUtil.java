@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+//上传图片方法
 public class FileUploadUtil {
 
     // 私有构造方法，防止 new 工具类

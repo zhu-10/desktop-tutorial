@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-//继承IService不用手动写增删改查
+//extends继承IService不用手动写增删改查
 //<Private>告诉MyBatis-Plus对应的表
 public interface PrivateService extends IService<Private> {
 

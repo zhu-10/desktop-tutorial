@@ -25,10 +25,6 @@ servlet:
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
 
-#图片导入地址
-file:
-  upload-dir=uploads/:
-
 mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

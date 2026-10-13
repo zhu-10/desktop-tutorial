@@ -15,7 +15,6 @@ public class Friend {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Integer status; //待处理
-
     private Long friend;    //好友
     private Long myself;    //自己
     private String content; //消息

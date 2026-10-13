@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.jsonwebtoken.io.IOException;
 import org.example.entity.Daily;
 import org.example.entity.User;
 import org.example.exception.BizException;
@@ -195,12 +194,9 @@ public class DailyServiceImpl extends ServiceImpl<DailyMapper, Daily> implements
         // 7. 一层 try-catch 就够了
         try {
             file.transferTo(dest);
-        } catch (IOException e) {
-            throw new BizException("图片保存失败：" + e.getMessage(), e);
         } catch (java.io.IOException e) {
-            throw new RuntimeException(e);
+            throw new BizException("图片保存失败：" + e.getMessage(), e);
         }
-
         return "/uploads/images/" + newFileName;
     }
 }
